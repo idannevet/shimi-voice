@@ -101,33 +101,34 @@ export default function VoicePage() {
 
     const recognition = new SR()
     recognition.lang = 'he-IL'
-    recognition.continuous = false
+    recognition.continuous = true
     recognition.interimResults = true
     recognitionRef.current = recognition
 
-    let finalText = ''
-
     recognition.onresult = (e: any) => {
-      let interim = ''
+      let full = ''
       for (let i = 0; i < e.results.length; i++) {
-        if (e.results[i].isFinal) finalText += e.results[i][0].transcript
-        else interim += e.results[i][0].transcript
+        full += e.results[i][0].transcript
       }
-      setLiveTranscript(finalText + interim)
+      setLiveTranscript(full)
     }
 
+    // Auto-restart if it stops unexpectedly (browser kills it after silence)
     recognition.onend = () => {
-      setLiveTranscript('')
-      recognitionRef.current = null
-      const text = finalText.trim()
-      if (text) processMessage(text)
-      else setStatus('idle')
+      if (recognitionRef.current === recognition && !busyRef.current) {
+        try { recognition.start() } catch {}
+      }
     }
 
     recognition.onerror = (e: any) => {
-      if (e.error !== 'no-speech' && e.error !== 'aborted') setError(`שגיאה: ${e.error}`)
-      setStatus('idle')
-      recognitionRef.current = null
+      if (e.error === 'no-speech') {
+        // Browser stopped due to silence — restart
+        if (recognitionRef.current === recognition && !busyRef.current) {
+          try { recognition.start() } catch {}
+        }
+        return
+      }
+      if (e.error !== 'aborted') setError(`שגיאה: ${e.error}`)
     }
 
     recognition.start()
@@ -135,8 +136,17 @@ export default function VoicePage() {
   }, [processMessage])
 
   const stopRecording = useCallback(() => {
-    recognitionRef.current?.stop()
-  }, [])
+    const rec = recognitionRef.current
+    recognitionRef.current = null // prevent auto-restart
+    try { rec?.stop() } catch {}
+    const text = liveTranscript.trim()
+    setLiveTranscript('')
+    if (text) {
+      processMessage(text)
+    } else {
+      setStatus('idle')
+    }
+  }, [liveTranscript, processMessage])
 
   const clearHistory = () => {
     if (confirm('למחוק היסטוריה?')) {
