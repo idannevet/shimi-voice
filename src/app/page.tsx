@@ -145,14 +145,9 @@ export default function VoicePage() {
     }
   }
 
-  // Touch handlers for push-to-talk
-  const onPointerDown = (e: React.PointerEvent) => {
-    e.preventDefault()
+  const toggleRecording = () => {
     if (status === 'idle') startRecording()
-  }
-  const onPointerUp = (e: React.PointerEvent) => {
-    e.preventDefault()
-    if (status === 'listening') stopRecording()
+    else if (status === 'listening') stopRecording()
   }
 
   return (
@@ -176,8 +171,8 @@ export default function VoicePage() {
           <div>
             <div style={{ fontWeight: 700, fontSize: 16 }}>שימי</div>
             <div style={{ fontSize: 11, color: status === 'listening' ? '#C8FF00' : status === 'processing' ? '#f59e0b' : status === 'speaking' ? '#3b82f6' : '#666' }}>
-              {status === 'idle' && 'לחץ והחזק כדי לדבר'}
-              {status === 'listening' && '🎤 מקשיב... שחרר לשליחה'}
+              {status === 'idle' && 'לחץ כדי לדבר'}
+              {status === 'listening' && '🎤 מקשיב... לחץ לשליחה'}
               {status === 'processing' && '🤔 חושב...'}
               {status === 'speaking' && '🔊 מדבר...'}
             </div>
@@ -203,7 +198,7 @@ export default function VoicePage() {
             }}>ש</div>
             <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>שיחה קולית עם שימי</h1>
             <p style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.6, margin: 0 }}>
-              לחץ והחזק את הכפתור כדי לדבר<br/>שחרר כדי לשלוח
+              לחץ על הכפתור כדי לדבר<br/>לחץ שוב כדי לשלוח
             </p>
           </div>
         )}
@@ -268,10 +263,7 @@ export default function VoicePage() {
         display: 'flex', justifyContent: 'center', flexShrink: 0,
       }}>
         <button
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          onContextMenu={e => e.preventDefault()}
+          onClick={toggleRecording}
           disabled={status === 'processing' || status === 'speaking'}
           style={{
             width: 72, height: 72, borderRadius: 36, border: 'none',
@@ -281,7 +273,6 @@ export default function VoicePage() {
             fontSize: 30, transition: 'background 0.2s, transform 0.1s',
             transform: status === 'listening' ? 'scale(1.15)' : 'scale(1)',
             boxShadow: status === 'listening' ? '0 0 40px rgba(255,68,68,0.5)' : '0 0 20px rgba(200,255,0,0.2)',
-            touchAction: 'none',
           }}
         >
           {status === 'listening' ? '⏹️' : status === 'processing' ? '🤔' : status === 'speaking' ? '🔊' : '🎤'}
